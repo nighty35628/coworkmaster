@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sign In - Hackathon Sandbox</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090b10;
+        --panel: #11151c;
+        --panel-soft: #171c25;
+        --text: #f4f7fb;
+        --muted: #9ca7b5;
+        --border: #273140;
+        --field: #0c1017;
+        --accent: #f8fafc;
+        --accent-text: #0a0d12;
+        --focus: rgba(125, 185, 255, 0.34);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 50% -20%, rgba(48, 66, 92, 0.5), transparent 38%),
+          var(--bg);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+
+      .theme-toggle {
+        position: fixed;
+        top: 22px;
+        right: 24px;
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: rgba(17, 21, 28, 0.84);
+        color: var(--text);
+        cursor: pointer;
+        font-size: 1rem;
+      }
+
+      main {
+        display: grid;
+        min-height: 100vh;
+        place-items: center;
+        padding: 32px 16px;
+      }
+
+      .signin-card {
+        width: min(100%, 430px);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: rgba(17, 21, 28, 0.94);
+        box-shadow: 0 26px 80px rgba(0, 0, 0, 0.34);
+        padding: 34px;
+      }
+
+      .brand {
+        display: grid;
+        gap: 16px;
+        justify-items: center;
+        margin-bottom: 26px;
+        text-align: center;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 72px;
+        height: 72px;
+        place-items: center;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: linear-gradient(145deg, #151b26, #0c1119);
+        font-size: 1.7rem;
+        font-weight: 800;
+        letter-spacing: 0;
+      }
+
+      .eyebrow {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 4px 0 0;
+        font-size: 1.55rem;
+        line-height: 1.25;
+        letter-spacing: 0;
+      }
+
+      .event-name {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      form {
+        display: grid;
+        gap: 18px;
+      }
+
+      .form-state {
+        display: grid;
+        gap: 18px;
+      }
+
+      .form-state[hidden] {
+        display: none;
+      }
+
+      .submit-button {
+        display: inline-flex;
+        width: 100%;
+        min-height: 46px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-radius: 10px;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 720;
+      }
+
+      .submit-button {
+        border: 0;
+        background: var(--accent);
+        color: var(--accent-text);
+      }
+
+      .divider {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .divider::before,
+      .divider::after {
+        height: 1px;
+        background: var(--border);
+        content: "";
+      }
+
+      label {
+        color: var(--muted);
+        font-size: 0.76rem;
+        font-weight: 780;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .input-row {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--field);
+        padding: 0 13px;
+      }
+
+      .input-row:focus-within {
+        border-color: #88bfff;
+        box-shadow: 0 0 0 4px var(--focus);
+      }
+
+      .input-icon {
+        color: var(--muted);
+      }
+
+      input {
+        width: 100%;
+        min-height: 46px;
+        border: 0;
+        background: transparent;
+        color: var(--text);
+        font: inherit;
+        outline: none;
+      }
+
+      .code-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+
+      .code-input {
+        min-height: 54px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--field);
+        text-align: center;
+        font-size: 1.25rem;
+        font-weight: 760;
+      }
+
+      .code-input:focus {
+        border-color: #88bfff;
+        box-shadow: 0 0 0 4px var(--focus);
+      }
+
+      .helper-text {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .legal {
+        margin: 24px 0 0;
+        color: var(--muted);
+        font-size: 0.83rem;
+        text-align: center;
+      }
+
+      a {
+        color: var(--text);
+      }
+
+      .success-panel {
+        display: none;
+        text-align: center;
+      }
+
+      .success-panel[aria-hidden="false"] {
+        display: grid;
+        gap: 10px;
+      }
+
+      .success-panel h2 {
+        margin: 0;
+        font-size: 1.35rem;
+      }
+
+      @media (max-width: 480px) {
+        .signin-card {
+          border-radius: 14px;
+          padding: 24px;
+        }
+
+        .theme-toggle {
+          top: 14px;
+          right: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <button
+      id="theme-toggle"
+      class="theme-toggle"
+      type="button"
+      aria-label="Auto theme. Switch to light theme"
+    >
+      ◐
+    </button>
+
+    <main>
+      <section class="signin-card" aria-labelledby="signin-heading">
+        <div class="brand">
+          <div class="brand-mark" aria-label="Hackathon Sandbox">AI</div>
+          <div>
+            <p class="eyebrow">AI Tinkerers · Sandbox</p>
+            <h1 id="signin-heading">Sign in to view your event</h1>
+            <p class="event-name">
+              Agents, Everywhere: Bots, Channels, &amp; More — Global Hackathon
+            </p>
+          </div>
+        </div>
+
+        <form id="email-login-form" name="emailLoginForm">
+          <div id="email-step" class="form-state">
+            <label for="login-email">Enter your email address</label>
+            <div class="input-row">
+              <span class="input-icon" aria-hidden="true">@</span>
+              <input
+                id="login-email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                inputmode="email"
+                required
+              >
+            </div>
+
+            <button
+              id="send-login-code"
+              name="sendLoginCode"
+              class="submit-button"
+              type="submit"
+            >
+              Continue →
+            </button>
+          </div>
+        </form>
+
+        <div id="login-success" class="success-panel" aria-hidden="true" aria-live="polite">
+          <h2>Signed in successfully</h2>
+          <p class="helper-text">Redirecting to the hackathon application sandbox.</p>
+        </div>
+
+        <p class="legal">
+          By signing in, you agree to our
+          <a href="#" id="terms-link">terms of service</a>
+          and
+          <a href="#" id="privacy-link">privacy policy</a>.
+        </p>
+        <p id="demo-status" class="helper-text" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <script src="demo.js"></script>
+    <script>
+      const form = document.getElementById("email-login-form");
+      const emailInput = document.getElementById("login-email");
+      const status = document.getElementById("demo-status");
+      const Demo = window.HackathonDemo;
+
+      function goToProfile(state) {
+        window.location.href = Demo.sessionUrl("profile.html", state.id);
+      }
+
+      if (Demo.sessionId) {
+        status.textContent = "等待 agent 触发登录…";
+        Demo.watch(Demo.sessionId, (state) => {
+          if (state.stage === "PROFILE" || state.stage === "PROFILE_FILLED" || state.stage === "SUCCESS") goToProfile(state);
+        });
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const email = emailInput.value.trim();
+        try {
+          const session = Demo.sessionId ? { id: Demo.sessionId } : await Demo.create(email);
+          const id = session.id || session.sessionId;
+          await Demo.trigger("login", { email }, id);
+          goToProfile({ id });
+        } catch (error) { status.textContent = `登录失败：${error.message}`; }
+      });
+
+      emailInput.focus();
+    </script>
+  </body>
+</html>

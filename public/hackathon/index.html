@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hackathon Registration Sandbox</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f7f9;
+        --panel: #ffffff;
+        --text: #18212f;
+        --muted: #5f6c7b;
+        --border: #d8dee7;
+        --field: #fbfcfe;
+        --accent: #1f7a5b;
+        --accent-dark: #176246;
+        --focus: rgba(31, 122, 91, 0.18);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+
+      main {
+        width: min(920px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 48px 0;
+      }
+
+      .page-header {
+        margin-bottom: 24px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 750;
+        line-height: 1.1;
+        letter-spacing: 0;
+      }
+
+      .subtitle {
+        margin: 0;
+        max-width: 720px;
+        color: var(--muted);
+        font-size: 1rem;
+      }
+
+      .registration-panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow: 0 18px 44px rgba(24, 33, 47, 0.08);
+        padding: 28px;
+      }
+
+      form {
+        display: grid;
+        gap: 20px;
+      }
+
+      .form-field {
+        display: grid;
+        gap: 8px;
+      }
+
+      label {
+        font-size: 0.95rem;
+        font-weight: 650;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--field);
+        color: var(--text);
+        font: inherit;
+        padding: 12px 14px;
+        outline: none;
+      }
+
+      textarea {
+        min-height: 112px;
+        resize: vertical;
+      }
+
+      input:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px var(--focus);
+      }
+
+      .actions {
+        display: flex;
+        justify-content: flex-start;
+        padding-top: 6px;
+      }
+
+      button {
+        border: 0;
+        border-radius: 6px;
+        background: var(--accent);
+        color: #ffffff;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+        padding: 12px 18px;
+      }
+
+      button:hover,
+      button:focus {
+        background: var(--accent-dark);
+      }
+
+      button:focus {
+        outline: none;
+        box-shadow: 0 0 0 4px var(--focus);
+      }
+
+      .success-state {
+        display: none;
+      }
+
+      .success-state[aria-hidden="false"] {
+        display: block;
+      }
+
+      .success-title {
+        margin: 0 0 10px;
+        font-size: 1.75rem;
+        line-height: 1.2;
+      }
+
+      .registration-id {
+        margin: 16px 0 0;
+        color: var(--muted);
+      }
+
+      .registration-id strong {
+        color: var(--text);
+      }
+
+      @media (max-width: 640px) {
+        main {
+          width: min(100% - 24px, 920px);
+          padding: 28px 0;
+        }
+
+        .registration-panel {
+          padding: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="page-header">
+        <h1>Hackathon Registration</h1>
+        <p class="subtitle">
+          A minimal sandbox registration page designed for browser automation
+          and AI agent form-filling demos.
+        </p>
+      </header>
+
+      <section class="registration-panel" aria-labelledby="registration-heading">
+        <div id="form-state">
+          <h2 id="registration-heading">Application Form</h2>
+
+          <form id="hackathon-registration-form" name="hackathon-registration-form">
+            <div class="form-field">
+              <label for="full-name">Full Name</label>
+              <input
+                id="full-name"
+                name="fullName"
+                type="text"
+                autocomplete="name"
+                required
+              >
+            </div>
+
+            <div class="form-field">
+              <label for="university">University</label>
+              <input
+                id="university"
+                name="university"
+                type="text"
+                autocomplete="organization"
+                required
+              >
+            </div>
+
+            <div class="form-field">
+              <label for="program">Program</label>
+              <input id="program" name="program" type="text" required>
+            </div>
+
+            <div class="form-field">
+              <label for="self-introduction">
+                Please introduce yourself briefly.
+              </label>
+              <textarea
+                id="self-introduction"
+                name="selfIntroduction"
+                required
+              ></textarea>
+            </div>
+
+            <div class="form-field">
+              <label for="relevant-experience">
+                What relevant experience or projects have you worked on?
+              </label>
+              <textarea
+                id="relevant-experience"
+                name="relevantExperience"
+                required
+              ></textarea>
+            </div>
+
+            <div class="form-field">
+              <label for="motivation-contribution">
+                Why do you want to join this hackathon, and what can you
+                contribute?
+              </label>
+              <textarea
+                id="motivation-contribution"
+                name="motivationContribution"
+                required
+              ></textarea>
+            </div>
+
+            <div class="actions">
+              <button id="submit-application" name="submitApplication" type="submit">
+                Submit Application
+              </button>
+            </div>
+            <p id="demo-status" aria-live="polite" style="margin:0;color:var(--muted);font-size:.9rem"></p>
+          </form>
+        </div>
+
+        <div
+          id="success-state"
+          class="success-state"
+          aria-hidden="true"
+          aria-live="polite"
+        >
+          <h2 id="success-message" class="success-title">
+            Application Submitted Successfully
+          </h2>
+          <p class="registration-id">
+            Registration ID:
+            <strong id="registration-id" data-testid="registration-id"></strong>
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <script src="demo.js"></script>
+    <script>
+      const form = document.getElementById("hackathon-registration-form");
+      const formState = document.getElementById("form-state");
+      const successState = document.getElementById("success-state");
+      const registrationId = document.getElementById("registration-id");
+      const demoStatus = document.getElementById("demo-status");
+      const Demo = window.HackathonDemo;
+
+      function createRegistrationId() {
+        const datePart = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+        const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+        return `HK-${datePart}-${randomPart}`;
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          if (Demo.sessionId) {
+            const fields = Object.fromEntries(new FormData(form).entries());
+            await Demo.trigger("fill-profile", { profile: { firstName: fields.fullName, lastName: "Demo", companyName: fields.university, jobTitle: fields.program, biography: fields.selfIntroduction, currentProjects: fields.relevantExperience, skills: "Hackathon", areasOfInterest: fields.motivationContribution, introPreference: "open", contactPreference: "email", role: "student" } });
+            await Demo.trigger("submit");
+            window.location.href = Demo.sessionUrl("success.html", Demo.sessionId);
+            return;
+          }
+          registrationId.textContent = createRegistrationId();
+          formState.hidden = true;
+          successState.setAttribute("aria-hidden", "false");
+          successState.focus();
+        } catch (error) { demoStatus.textContent = `提交失败：${error.message}`; }
+      });
+    </script>
+  </body>
+</html>

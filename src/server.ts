@@ -1,18 +1,77 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import fastifyStatic from "@fastify/static";
 import { randomUUID } from "node:crypto";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Store } from "./store.js";
-import { MockMailboxAdapter } from "./services/mailbox.js";
+import { ImapSmtpMailboxAdapter, MockMailboxAdapter, type MailboxConfig, type MailboxAdapter } from "./services/mailbox.js";
 import { scanMailbox } from "./services/agent.js";
+import { DemoStore } from "./services/demo.js";
 
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: true });
+await app.register(fastifyStatic, {
+  root: join(fileURLToPath(new URL(".", import.meta.url)), "../public"),
+  index: "index.html",
+});
 const store = new Store();
-const mailbox = new MockMailboxAdapter();
+let mailbox: MailboxAdapter = new MockMailboxAdapter();
+let mailboxConfig: MailboxConfig | null = null;
 const defaultUser = "demo-user";
+const demos = new DemoStore();
 
 app.get("/v1/health", async () => ({ ok: true, service: "opportunity-autopilot", demoMode: true }));
-app.post<{ Body: any }>("/v1/accounts/test", async () => mailbox.testConnection());
+app.post<{ Body: { email?: string } }>("/v1/demo/sessions", async (request) => {
+  const session = demos.create(request.body?.email);
+  return { sessionId: session.id, stage: session.stage, email: session.email };
+});
+app.get<{ Params: { id: string } }>("/v1/demo/sessions/:id", async (request, reply) => {
+  const session = demos.get(request.params.id);
+  return session ?? reply.code(404).send({ error: "demo_session_not_found" });
+});
+app.post<{ Params: { action: string }; Body: { sessionId?: string; email?: string; profile?: Record<string, unknown> } }>("/v1/demo/trigger/:action", async (request, reply) => {
+  const sessionId = request.body?.sessionId;
+  if (!sessionId) return reply.code(400).send({ error: "sessionId_required" });
+  try {
+    if (request.params.action === "login") {
+      if (!request.body.email) return reply.code(400).send({ error: "email_required" });
+      return demos.login(sessionId, request.body.email);
+    }
+    if (request.params.action === "fill-profile") {
+      const result = demos.fillProfile(sessionId, (request.body.profile ?? {}) as any);
+      if (result.missing.length) return reply.code(422).send({ error: "missing_profile_fields", missing: result.missing, session: result.session });
+      return result.session;
+    }
+    if (request.params.action === "submit") {
+      const result = demos.submit(sessionId);
+      if (result.error) return reply.code(409).send({ error: result.error, session: result.session });
+      return result.session;
+    }
+    return reply.code(404).send({ error: "unknown_demo_action" });
+  } catch (error) {
+    if (error instanceof Error && error.message === "demo_session_not_found") return reply.code(404).send({ error: error.message });
+    throw error;
+  }
+});
+app.post<{ Body: MailboxConfig }>("/v1/accounts/test", async (request, reply) => {
+  try {
+    const candidate = new ImapSmtpMailboxAdapter(request.body);
+    return await candidate.testConnection();
+  } catch (error) {
+    return reply.code(400).send({ imap: false, smtp: false, message: error instanceof Error ? error.message : String(error) });
+  }
+});
+app.post<{ Body: MailboxConfig }>("/v1/accounts/connect", async (request, reply) => {
+  try {
+    const candidate = new ImapSmtpMailboxAdapter(request.body);
+    const result = await candidate.testConnection();
+    if (!result.imap || !result.smtp) return reply.code(400).send(result);
+    mailbox = candidate; mailboxConfig = request.body;
+    return { connected: true, imap: result.imap, smtp: result.smtp, message: result.message };
+  } catch (error) { return reply.code(400).send({ connected: false, message: error instanceof Error ? error.message : String(error) }); }
+});
+app.get("/v1/accounts/status", async () => ({ connected: mailboxConfig !== null, mode: mailboxConfig ? "imap-smtp" : "demo" }));
 app.get<{ Querystring: { userId?: string } }>("/v1/profile", async (request, reply) => {
   const profile = store.profiles.get(request.query.userId ?? defaultUser); return profile ?? null;
 });
@@ -21,6 +80,17 @@ app.post<{ Body: any }>("/v1/profile", async (request, reply) => {
   return store.upsertProfile({ userId: body.userId ?? defaultUser, name: body.name, school: body.school, program: body.program, interests: body.interests ?? [], skills: body.skills ?? [], projects: body.projects ?? [], links: body.links ?? [], bio: body.bio });
 });
 app.post<{ Body: { userId?: string } }>("/v1/scan", async (request) => scanMailbox(store, mailbox, request.body?.userId ?? defaultUser));
+app.get("/v1/messages", async () => {
+  const reader = mailbox as MailboxAdapter & { listMessages?: () => Promise<unknown[]> };
+  const messages = reader.listMessages ? await reader.listMessages() : await mailbox.listUnread();
+  return { messages };
+});
+app.get<{ Params: { id: string } }>("/v1/messages/:id", async (request, reply) => {
+  const reader = mailbox as MailboxAdapter & { getMessage?: (id: string) => Promise<unknown | null> };
+  const message = reader.getMessage ? await reader.getMessage(request.params.id) : store.messages.get(request.params.id);
+  return message ?? reply.code(404).send({ error: "message_not_found" });
+});
+app.post<{ Body: { to: string; subject: string; text: string } }>("/v1/send", async (request) => mailbox.send(request.body));
 app.get("/v1/opportunities", async () => ({ opportunities: [...store.opportunities.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt)) }));
 app.get<{ Params: { id: string } }>("/v1/opportunities/:id", async (request, reply) => { const item = store.opportunities.get(request.params.id); return item ?? reply.code(404).send({ error: "opportunity_not_found" }); });
 app.post<{ Params: { id: string } }>("/v1/opportunities/:id/prepare-form", async (request, reply) => {

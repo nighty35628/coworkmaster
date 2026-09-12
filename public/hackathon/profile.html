@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Edit Your Profile - Hackathon Sandbox</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090b10;
+        --panel: #11151c;
+        --panel-soft: #171c25;
+        --text: #f4f7fb;
+        --muted: #9ca7b5;
+        --border: #273140;
+        --field: #0c1017;
+        --accent: #f8fafc;
+        --accent-text: #0a0d12;
+        --focus: rgba(125, 185, 255, 0.34);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 50% -20%, rgba(48, 66, 92, 0.48), transparent 38%),
+          var(--bg);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border);
+        padding: 18px 24px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 800;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: linear-gradient(145deg, #151b26, #0c1119);
+      }
+
+      .account-email {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      main {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 32px 0 48px;
+      }
+
+      .notice {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 22px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: rgba(23, 28, 37, 0.92);
+        padding: 14px 16px;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 22px;
+      }
+
+      .panel {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: rgba(17, 21, 28, 0.94);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+      }
+
+      .sidebar {
+        align-self: start;
+        padding: 24px;
+      }
+
+      .avatar {
+        display: grid;
+        width: 84px;
+        height: 84px;
+        margin-bottom: 18px;
+        place-items: center;
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        background: var(--panel-soft);
+        color: var(--muted);
+        font-size: 2rem;
+        font-weight: 800;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        margin-bottom: 8px;
+        font-size: 1.65rem;
+        line-height: 1.2;
+        letter-spacing: 0;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .progress-label {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 22px;
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 760;
+        text-transform: uppercase;
+      }
+
+      .progress {
+        height: 9px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: var(--field);
+      }
+
+      .progress span {
+        display: block;
+        width: 0%;
+        height: 100%;
+        background: #88bfff;
+      }
+
+      .missing-list {
+        display: grid;
+        gap: 8px;
+        margin-top: 22px;
+      }
+
+      .pill {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--panel-soft);
+        color: var(--text);
+        padding: 8px 12px;
+        text-align: left;
+      }
+
+      .content {
+        display: grid;
+        gap: 16px;
+      }
+
+      .section {
+        padding: 22px;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      h2 {
+        margin-bottom: 0;
+        font-size: 1.16rem;
+      }
+
+      .status {
+        border: 1px solid #5f3e2d;
+        border-radius: 999px;
+        color: #f2ba8f;
+        font-size: 0.74rem;
+        font-weight: 800;
+        padding: 4px 9px;
+        text-transform: uppercase;
+      }
+
+      form {
+        display: grid;
+        gap: 18px;
+      }
+
+      .grid-two {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .field {
+        display: grid;
+        gap: 7px;
+      }
+
+      label,
+      legend {
+        color: var(--muted);
+        font-size: 0.8rem;
+        font-weight: 780;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--field);
+        color: var(--text);
+        font: inherit;
+        outline: none;
+        padding: 12px 13px;
+      }
+
+      textarea {
+        min-height: 104px;
+        resize: vertical;
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus {
+        border-color: #88bfff;
+        box-shadow: 0 0 0 4px var(--focus);
+      }
+
+      .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 8px;
+      }
+
+      .checkbox-card {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--field);
+        padding: 10px 12px;
+        color: var(--text);
+        font-size: 0.94rem;
+        text-transform: none;
+      }
+
+      .checkbox-card input {
+        width: auto;
+        min-height: auto;
+      }
+
+      .actions {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 6px;
+      }
+
+      button,
+      .button-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--accent);
+        color: var(--accent-text);
+        cursor: pointer;
+        font: inherit;
+        font-weight: 760;
+        padding: 10px 16px;
+        text-decoration: none;
+      }
+
+      @media (max-width: 860px) {
+        .layout,
+        .grid-two,
+        .checkbox-grid {
+          grid-template-columns: 1fr;
+        }
+
+        header {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <div class="brand-mark">AI</div>
+        <span>Hackathon Sandbox</span>
+      </div>
+      <div id="signed-in-email" class="account-email">Signed in</div>
+    </header>
+
+    <main>
+      <div class="notice" role="status">
+        <span id="demo-notice">Profile incomplete. Add your basic details to finish setup.</span>
+        <a class="button-link" href="#required-info">View Profile</a>
+      </div>
+
+      <div class="layout">
+        <aside class="panel sidebar" aria-labelledby="profile-summary-heading">
+          <div class="avatar" aria-hidden="true">2</div>
+          <h1 id="profile-summary-heading">Edit Your Profile</h1>
+          <p class="muted">Add your current title, company, and connecting details.</p>
+
+          <div class="progress-label">
+            <span>Profile completeness</span>
+            <span id="profile-completeness">0%</span>
+          </div>
+          <div class="progress" aria-hidden="true"><span></span></div>
+
+          <div class="missing-list" aria-label="Missing high-value items">
+            <button class="pill" type="button">Add LinkedIn</button>
+            <button class="pill" type="button">Add interests</button>
+            <button class="pill" type="button">Add projects</button>
+          </div>
+        </aside>
+
+        <div class="content">
+          <section id="required-info" class="panel section" aria-labelledby="required-info-heading">
+            <div class="section-header">
+              <h2 id="required-info-heading">Required info</h2>
+              <span class="status">Incomplete</span>
+            </div>
+
+            <form id="profile-form" name="profileForm">
+              <div class="grid-two">
+                <div class="field">
+                  <label for="first-name">First Name</label>
+                  <input id="first-name" name="firstName" type="text" autocomplete="given-name" required>
+                </div>
+
+                <div class="field">
+                  <label for="last-name">Last Name</label>
+                  <input id="last-name" name="lastName" type="text" autocomplete="family-name" required>
+                </div>
+              </div>
+
+              <div class="grid-two">
+                <div class="field">
+                  <label for="company-name">Company</label>
+                  <input id="company-name" name="companyName" type="text" autocomplete="organization" required>
+                </div>
+
+                <div class="field">
+                  <label for="job-title">Title</label>
+                  <input id="job-title" name="jobTitle" type="text" autocomplete="organization-title" required>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="profile-email">Email</label>
+                <input id="profile-email" name="email" type="email" readonly>
+              </div>
+
+              <section aria-labelledby="connecting-heading">
+                <div class="section-header">
+                  <h2 id="connecting-heading">Connecting</h2>
+                  <span class="status">Incomplete</span>
+                </div>
+
+                <div class="field">
+                  <label for="biography">Biography</label>
+                  <textarea id="biography" name="biography" maxlength="800" required></textarea>
+                </div>
+
+                <div class="field">
+                  <label for="current-projects">Projects</label>
+                  <textarea id="current-projects" name="currentProjects" maxlength="500" required></textarea>
+                </div>
+
+                <div class="field">
+                  <label for="skills">Skills</label>
+                  <textarea id="skills" name="skills" maxlength="500" required></textarea>
+                </div>
+
+                <div class="grid-two">
+                  <div class="field">
+                    <label for="startup-description">Building a startup</label>
+                    <textarea id="startup-description" name="startupDescription" maxlength="500"></textarea>
+                  </div>
+
+                  <div class="field">
+                    <label for="areas-of-interest">Areas of Interest</label>
+                    <textarea id="areas-of-interest" name="areasOfInterest" maxlength="500" required></textarea>
+                  </div>
+                </div>
+
+                <fieldset>
+                  <legend>Employment</legend>
+                  <div class="checkbox-grid">
+                    <label class="checkbox-card"><input id="employment-employed" name="employment" type="checkbox" value="employed"> Employed</label>
+                    <label class="checkbox-card"><input id="employment-open" name="employment" type="checkbox" value="openToOpportunities"> Open to New Opportunities</label>
+                    <label class="checkbox-card"><input id="employment-self-employed" name="employment" type="checkbox" value="selfEmployed"> Self Employed</label>
+                    <label class="checkbox-card"><input id="employment-hiring" name="employment" type="checkbox" value="hiring"> Hiring</label>
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend>I can help with</legend>
+                  <div class="checkbox-grid">
+                    <label class="checkbox-card"><input id="help-hiring" name="helpWith" type="checkbox" value="hiring"> Hiring</label>
+                    <label class="checkbox-card"><input id="help-fundraising" name="helpWith" type="checkbox" value="fundraising"> Fundraising</label>
+                    <label class="checkbox-card"><input id="help-gtm" name="helpWith" type="checkbox" value="gtm"> GTM</label>
+                    <label class="checkbox-card"><input id="help-architecture" name="helpWith" type="checkbox" value="technicalArchitecture"> Technical Architecture</label>
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend>I'm looking for</legend>
+                  <div class="checkbox-grid">
+                    <label class="checkbox-card"><input id="looking-peers" name="lookingFor" type="checkbox" value="peers"> Knowledge Sharing With Peers</label>
+                    <label class="checkbox-card"><input id="looking-community" name="lookingFor" type="checkbox" value="community"> Community And Friendships</label>
+                    <label class="checkbox-card"><input id="looking-customers" name="lookingFor" type="checkbox" value="customers"> Customers</label>
+                    <label class="checkbox-card"><input id="looking-cofounders" name="lookingFor" type="checkbox" value="cofounders"> Co Founders</label>
+                  </div>
+                </fieldset>
+
+                <div class="grid-two">
+                  <div class="field">
+                    <label for="intro-preference">Intro preference</label>
+                    <select id="intro-preference" name="introPreference" required>
+                      <option value="">Select an option...</option>
+                      <option value="open">Open to intros</option>
+                      <option value="warm">Only if warm</option>
+                      <option value="none">No thanks</option>
+                    </select>
+                  </div>
+
+                  <div class="field">
+                    <label for="contact-preference">Contact preference</label>
+                    <select id="contact-preference" name="contactPreference" required>
+                      <option value="">Select an option...</option>
+                      <option value="dm">DM</option>
+                      <option value="email">Email</option>
+                      <option value="phone">Phone</option>
+                      <option value="none">Do not contact me</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="grid-two">
+                  <div class="field">
+                    <label for="role">Role</label>
+                    <select id="role" name="role" required>
+                      <option value="">Select an option...</option>
+                      <option value="aiEngineer">AI Engineer</option>
+                      <option value="softwareDeveloper">Software Developer</option>
+                      <option value="founder">Entrepreneur / Founder</option>
+                      <option value="student">Student</option>
+                      <option value="designer">UX/UI Designer</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <div class="field">
+                    <label for="dietary-restrictions">Dietary Restrictions</label>
+                    <input id="dietary-restrictions" name="dietaryRestrictions" type="text">
+                  </div>
+                </div>
+              </section>
+
+              <div class="actions">
+                <button id="save-profile" name="saveProfile" type="submit">
+                  Save Profile and Continue
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <script src="demo.js"></script>
+    <script>
+      const Demo = window.HackathonDemo;
+      const form = document.getElementById("profile-form");
+      const notice = document.getElementById("demo-notice");
+      const setValue = (id, value) => { const el = document.getElementById(id); if (el) el.value = value || ""; };
+      const setChecks = (name, values = []) => document.querySelectorAll(`input[name="${name}"]`).forEach((el) => { el.checked = values.includes(el.value); });
+      function renderProfile(state) {
+        document.getElementById("signed-in-email").textContent = state.email || "demo@example.com";
+        setValue("profile-email", state.email);
+        if (!state.profile) return;
+        const p = state.profile;
+        ["firstName", "lastName", "companyName", "jobTitle", "biography", "currentProjects", "skills", "startupDescription", "areasOfInterest", "introPreference", "contactPreference", "role", "dietaryRestrictions"].forEach((key) => setValue(key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`), p[key]));
+        setChecks("employment", p.employment); setChecks("helpWith", p.helpWith); setChecks("lookingFor", p.lookingFor);
+        if (state.stage === "PROFILE_FILLED") notice.textContent = "资料已由 agent 填入，等待提交触发…";
+      }
+      if (Demo.sessionId) {
+        notice.textContent = "等待 agent 填写资料…";
+        Demo.watch(Demo.sessionId, (state) => {
+          renderProfile(state);
+          if (state.stage === "SUCCESS") window.location.href = Demo.sessionUrl("success.html", state.id);
+        });
+      } else {
+        const email = new URLSearchParams(window.location.search).get("email") || "demo@example.com";
+        document.getElementById("signed-in-email").textContent = email;
+        document.getElementById("profile-email").value = email;
+      }
+      function collectProfile() {
+        const value = (id) => document.getElementById(id).value.trim();
+        const checked = (name) => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map((el) => el.value);
+        return { firstName:value("first-name"), lastName:value("last-name"), companyName:value("company-name"), jobTitle:value("job-title"), biography:value("biography"), currentProjects:value("current-projects"), skills:value("skills"), startupDescription:value("startup-description"), areasOfInterest:value("areas-of-interest"), employment:checked("employment"), helpWith:checked("helpWith"), lookingFor:checked("lookingFor"), introPreference:document.getElementById("intro-preference").value, contactPreference:document.getElementById("contact-preference").value, role:document.getElementById("role").value, dietaryRestrictions:value("dietary-restrictions") };
+      }
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          let id = Demo.sessionId;
+          if (!id) { const session = await Demo.create(document.getElementById("profile-email").value); id = session.sessionId; await Demo.trigger("login", { email: session.email }, id); }
+          await Demo.trigger("fill-profile", { profile: collectProfile() }, id);
+          await Demo.trigger("submit", {}, id);
+          window.location.href = Demo.sessionUrl("success.html", id);
+        } catch (error) { notice.textContent = `保存失败：${error.message}`; }
+      });
+    </script>
+  </body>
+</html>
