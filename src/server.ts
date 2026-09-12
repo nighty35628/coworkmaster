@@ -24,7 +24,7 @@ const demos = new DemoStore();
 app.get("/v1/health", async () => ({ ok: true, service: "opportunity-autopilot", demoMode: true }));
 app.post<{ Body: { email?: string } }>("/v1/demo/sessions", async (request) => {
   const session = demos.create(request.body?.email);
-  return { sessionId: session.id, stage: session.stage, email: session.email };
+  return { sessionId: session.id, stage: session.stage, email: session.email, displayUrl: `/hackathon/signin.html?sessionId=${encodeURIComponent(session.id)}` };
 });
 app.get<{ Params: { id: string } }>("/v1/demo/sessions/:id", async (request, reply) => {
   const session = demos.get(request.params.id);
