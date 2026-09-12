@@ -95,3 +95,55 @@ export function inboxBlocks(opportunities: Opportunity[]): BlockLike[] {
     ...opportunityCard(item),
   ]);
 }
+
+/**
+ * The App Home is intentionally a compact operating view: counts first,
+ * actions second, then the source email/opportunity context that explains
+ * why an item is on the user's list.
+ */
+export function homeView(opportunities: Opportunity[], error?: string): View {
+  const categoryCounts = opportunities.reduce<Record<string, number>>((counts, item) => {
+    const category = item.category || "未分类";
+    counts[category] = (counts[category] || 0) + 1;
+    return counts;
+  }, {});
+  const categorySummary = Object.entries(categoryCounts).length
+    ? Object.entries(categoryCounts).map(([category, count]) => `*${category}* ${count}`).join("   ·   ")
+    : "暂无分类";
+  const todo = opportunities.filter((item) => !["SUBMITTED", "SENT", "REJECTED"].includes(item.status || ""));
+  const raw = opportunities.slice(0, 5);
+
+  const todoBlocks: BlockLike[] = todo.length
+    ? todo.slice(0, 4).flatMap((item, index) => [
+      ...(index ? [{ type: "divider" as const }] : []),
+      { type: "section", text: text(`*${item.title}*\n${item.priority ? `优先级：${item.priority}` : "待处理"}${item.deadline ? `  ·  截止：${item.deadline}` : ""}`), accessory: { type: "button", action_id: "opportunity_review", text: { type: "plain_text", text: "查看并准备" }, value: item.id } },
+    ])
+    : [{ type: "section", text: text("✅ 当前没有待办事项。") }];
+
+  const rawBlocks: BlockLike[] = raw.length
+    ? raw.flatMap((item, index) => [
+      ...(index ? [{ type: "divider" as const }] : []),
+      { type: "section", text: text(`*${item.title}*\n${item.sender ? `来自：${item.sender}` : "来源未知"}${item.summary ? `\n${item.summary}` : ""}`), accessory: { type: "button", action_id: "opportunity_review", text: { type: "plain_text", text: "打开" }, value: item.id } },
+    ])
+    : [{ type: "section", text: text("📭 暂时没有可展示的原始邮件。点击“刷新”扫描一次。") }];
+
+  return ({
+    type: "home",
+    blocks: [
+      { type: "header", text: { type: "plain_text", text: "WhenAgent 工作台" } },
+      { type: "section", text: text("Agent 会持续观察邮箱，把重要邮件整理成分类、待办和可执行的下一步。") },
+      ...(error ? [{ type: "section", text: text(`⚠️ 本次刷新失败：${error}`) }] : []),
+      { type: "actions", elements: [
+        { type: "button", action_id: "home_refresh", text: { type: "plain_text", text: "刷新邮箱" }, style: "primary" },
+        { type: "button", action_id: "home_profile", text: { type: "plain_text", text: "设置资料" } },
+      ] },
+      { type: "divider" },
+      { type: "section", text: text(`*分类概览*\n${categorySummary}`) },
+      { type: "header", text: { type: "plain_text", text: "待办" } },
+      ...todoBlocks,
+      { type: "header", text: { type: "plain_text", text: "原始邮件 / 机会" } },
+      ...rawBlocks,
+      { type: "context", elements: [text("打开本页会刷新一次邮箱；Agent 只准备内容，提交前仍需要你的确认。")] },
+    ],
+  } as any);
+}

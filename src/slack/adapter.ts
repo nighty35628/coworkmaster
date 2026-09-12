@@ -1,6 +1,6 @@
 import { App, LogLevel, type BlockAction, type ViewSubmitAction } from "@slack/bolt";
 import type { KnownBlock } from "@slack/types";
-import { inboxBlocks, opportunityCard, profileView, reviewView } from "./blocks.js";
+import { homeView, inboxBlocks, opportunityCard, profileView, reviewView } from "./blocks.js";
 import { MockAgentApi } from "./api-client.js";
 import type { AgentApi, Opportunity, SlackAdapterOptions, UserProfile } from "./types.js";
 
@@ -48,6 +48,40 @@ export function createSlackApp(options: SlackAdapterOptions): App {
       logLevel: LogLevel.INFO,
     });
   const fallbackUser = options.defaultUserId || "demo-user";
+
+  const publishHome = async (client: any, userId: string) => {
+    try {
+      const opportunities = await api.scan(userId);
+      await client.views.publish({ user_id: userId, view: homeView(opportunities) });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      await client.views.publish({ user_id: userId, view: homeView([], message) });
+    }
+  };
+
+  // App Home is the Slack-native dashboard. Opening the Home tab refreshes
+  // the user's mailbox view, so the page stays useful without a slash command.
+  app.event("app_home_opened", async ({ event, client }) => {
+    if (event.tab !== "home") return;
+    await publishHome(client, event.user || fallbackUser);
+  });
+
+  app.action("home_refresh", async ({ ack, body, client }) => {
+    await ack();
+    await publishHome(client, userIdOf(body as BlockAction, fallbackUser));
+  });
+
+  app.action("home_profile", async ({ ack, body, client }) => {
+    await ack();
+    const source = body as BlockAction;
+    if (!source.trigger_id) return;
+    const userId = userIdOf(source, fallbackUser);
+    try {
+      await client.views.open({ trigger_id: source.trigger_id, view: profileView(await api.getProfile(userId)) });
+    } catch (error) {
+      if ("respond" in body && typeof (body as any).respond === "function") await (body as any).respond({ response_type: "ephemeral", text: error instanceof Error ? error.message : String(error) });
+    }
+  });
 
   app.command("/whenagent", async ({ command, ack, say, client }) => {
     await ack();
