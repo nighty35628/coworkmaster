@@ -10,6 +10,7 @@ import { ImapSmtpMailboxAdapter, MockMailboxAdapter, type MailboxConfig, type Ma
 import { scanMailbox } from "./services/agent.js";
 import { DemoStore } from "./services/demo.js";
 import { MailboxSettings } from "./services/mailbox-settings.js";
+import { MailMonitor } from "./services/mail-monitor.js";
 
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: true });
@@ -126,10 +127,14 @@ app.post<{ Params: { id: string } }>("/v1/opportunities/:id/submit", async (requ
 app.post<{ Body: { opportunityId?: string; userId?: string; kind: string; comment?: string } }>("/v1/feedback/events", async (request) => { const event = { id: randomUUID(), opportunityId: request.body.opportunityId, userId: request.body.userId ?? defaultUser, kind: request.body.kind, comment: request.body.comment, createdAt: new Date().toISOString() }; store.feedback.push(event); return event; });
 
 const port = Number(process.env.PORT ?? 8787);
+const monitor = new MailMonitor(store, () => mailbox, demos, defaultUser, port);
 // macOS commonly exposes HOST as the computer name; that can resolve to
 // loopback and make the console unreachable from another device.
 const configuredHost = process.env.HOST;
 const host = configuredHost && (configuredHost === "localhost" || configuredHost === "0.0.0.0" || /^\d{1,3}(?:\.\d{1,3}){3}$/.test(configuredHost))
   ? configuredHost
   : "0.0.0.0";
-app.listen({ port, host }).catch((error) => { app.log.error(error); process.exit(1); });
+app.listen({ port, host }).then(() => {
+  const interval = monitor.start();
+  app.log.info(`mail monitor enabled; polling every ${interval}ms`);
+}).catch((error) => { app.log.error(error); process.exit(1); });
