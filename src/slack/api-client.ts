@@ -16,7 +16,14 @@ export class HttpAgentApi implements AgentApi {
   async getProfile(userId: string) {
     try {
       const profile = await this.request<any>(`/v1/profile?userId=${encodeURIComponent(userId)}`);
-      return { ...profile, projects: Array.isArray(profile.projects) ? profile.projects.join("; ") : profile.projects } as UserProfile;
+      const links: string[] = profile.links || [];
+      return {
+        ...profile,
+        projects: Array.isArray(profile.projects) ? profile.projects.join("; ") : profile.projects,
+        links,
+        github: profile.github || links.find((link) => /github\.com/i.test(link)),
+        portfolio: profile.portfolio || links.find((link) => !/github\.com/i.test(link)),
+      } as UserProfile;
     } catch (error) {
       if (error instanceof Error && error.message.startsWith("Agent API 404")) return null;
       throw error;
