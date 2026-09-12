@@ -17,6 +17,13 @@ For a local console that keeps running after the terminal task ends, use
 are written to `.data/server.log` and `.data/server.pid`. The server listens
 on `127.0.0.1:8787` by default.
 
+The background server also polls the configured mailbox for new unread mail.
+Set `MAIL_POLL_INTERVAL_MS` to change the interval (default 15 seconds). A
+message containing the exact keyword `AIAGENTHACKTHON` creates a registration
+demo session, fills it from the saved profile, and opens the local browser at
+the hackathon sign-in page. Set `OPEN_DEMO_BROWSER=false` when running on a
+headless machine; the URL is still logged in `.data/server.log`.
+
 Open [http://localhost:8787/](http://localhost:8787/) for the local test
 console. It supports IMAP/SMTP connection testing, reading messages, profile
 editing, opportunity scanning, form preparation, approval, simulated sending,
