@@ -85,8 +85,12 @@ curl -X POST http://localhost:8787/v1/demo/trigger/submit \
   -d '{"sessionId":"SESSION_ID"}'
 ```
 
-The browser polls `GET /v1/demo/sessions/:id` and redirects from
-`signin.html` to `profile.html`, then to `success.html`. The registration ID
-is deterministic for a session (`HK-DEMO-XXXXXX`), which keeps a live demo
-repeatable. Opening `hackathon/index.html` still provides the standalone
-one-page form.
+The intended live-demo order is: simulate the invitation email, create a
+session, open the returned `displayUrl`, then let the agent call `login` and
+`fill-profile`. The browser polls `GET /v1/demo/sessions/:id`, moves from
+`signin.html` to `profile.html`, and renders the agent-filled values. The
+browser never submits automatically: the person reviews the form and clicks
+**Review and Submit Application**, which is the human approval boundary and
+then calls `submit`. The final page is `success.html` and shows a deterministic
+registration ID (`HK-DEMO-XXXXXX`) for repeatable stage demos. Opening
+`hackathon/index.html` still provides the standalone one-page form.

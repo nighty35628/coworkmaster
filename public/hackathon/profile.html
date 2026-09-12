@@ -497,7 +497,7 @@
 
               <div class="actions">
                 <button id="save-profile" name="saveProfile" type="submit">
-                  Save Profile and Continue
+                  Review and Submit Application
                 </button>
               </div>
             </form>
@@ -520,10 +520,13 @@
         const p = state.profile;
         ["firstName", "lastName", "companyName", "jobTitle", "biography", "currentProjects", "skills", "startupDescription", "areasOfInterest", "introPreference", "contactPreference", "role", "dietaryRestrictions"].forEach((key) => setValue(key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`), p[key]));
         setChecks("employment", p.employment); setChecks("helpWith", p.helpWith); setChecks("lookingFor", p.lookingFor);
-        if (state.stage === "PROFILE_FILLED") notice.textContent = "资料已由 agent 填入，等待提交触发…";
+        if (state.stage === "PROFILE_FILLED") {
+          notice.textContent = "Agent 已根据你的个人资料填好报名表，请检查内容后确认提交。";
+          form.querySelectorAll("input, textarea, select").forEach((el) => { el.removeAttribute("disabled"); });
+        }
       }
       if (Demo.sessionId) {
-        notice.textContent = "等待 agent 填写资料…";
+        notice.textContent = "报名页面已打开，Agent 正在根据你的资料填写…";
         Demo.watch(Demo.sessionId, (state) => {
           renderProfile(state);
           if (state.stage === "SUCCESS") window.location.href = Demo.sessionUrl("success.html", state.id);

@@ -285,6 +285,10 @@
           </div>
         </div>
 
+        <div id="agent-invite" class="helper-text" hidden style="border:1px solid var(--border);border-radius:10px;background:var(--panel-soft);padding:12px 14px">
+          Agent 发现了一封新的活动邀请，正在为你打开报名页面…
+        </div>
+
         <form id="email-login-form" name="emailLoginForm">
           <div id="email-step" class="form-state">
             <label for="login-email">Enter your email address</label>
@@ -338,8 +342,11 @@
       }
 
       if (Demo.sessionId) {
-        status.textContent = "等待 agent 触发登录…";
+        const invite = document.getElementById("agent-invite");
+        invite.hidden = false;
+        status.textContent = "已由 Agent 从邮件触发，等待报名页面准备完成…";
         Demo.watch(Demo.sessionId, (state) => {
+          if (state.email) emailInput.value = state.email;
           if (state.stage === "PROFILE" || state.stage === "PROFILE_FILLED" || state.stage === "SUCCESS") goToProfile(state);
         });
       }
