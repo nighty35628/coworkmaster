@@ -50,6 +50,7 @@ export interface AgentApi {
   scan(userId: string): Promise<Opportunity[]>;
   getOpportunity(id: string, userId: string): Promise<Opportunity>;
   prepareForm(id: string, userId: string): Promise<Opportunity>;
+  updateDraft?(id: string, userId: string, draft: Draft): Promise<Opportunity>;
   decide(id: string, userId: string, decision: "approve" | "reject"): Promise<Opportunity>;
   submit(id: string, userId: string, version?: string): Promise<Opportunity>;
 }

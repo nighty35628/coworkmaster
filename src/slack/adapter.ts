@@ -111,6 +111,10 @@ export function createSlackApp(options: SlackAdapterOptions): App {
     try { metadata = JSON.parse(view.private_metadata || "{}"); } catch { /* malformed metadata cannot authorize a submission */ }
     if (!metadata.opportunityId) return;
     try {
+      const editedBody = valueOf(view.state.values as Record<string, any>, "draft_body");
+      if (editedBody && api.updateDraft) {
+        await api.updateDraft(metadata.opportunityId, userId, { body: editedBody, version: metadata.version });
+      }
       await api.decide(metadata.opportunityId, userId, "approve");
       const result = await api.submit(metadata.opportunityId, userId, metadata.version);
       await client.chat.postMessage({ channel: userId, text: `✅ 已完成：${result.title}` });

@@ -35,6 +35,9 @@ export class HttpAgentApi implements AgentApi {
   async prepareForm(id: string, userId: string) {
     return this.normalise(await this.request<any>(`/v1/opportunities/${encodeURIComponent(id)}/prepare-form`, { method: "POST", body: JSON.stringify({ userId }) }));
   }
+  async updateDraft(id: string, userId: string, draft: Draft) {
+    return this.normalise(await this.request<any>(`/v1/opportunities/${encodeURIComponent(id)}/draft`, { method: "PATCH", body: JSON.stringify({ userId, draft: draft.body, fields: draft.fields }) }));
+  }
   async decide(id: string, userId: string, decision: "approve" | "reject") {
     return this.normalise(await this.request<any>(`/v1/opportunities/${encodeURIComponent(id)}/approve`, { method: "POST", body: JSON.stringify({ userId, decision }) }));
   }
@@ -69,6 +72,11 @@ export class MockAgentApi implements AgentApi {
     const value = await this.getOpportunity(id);
     value.draft = { fields: { 姓名: this.profile?.name || "待填写", 学校: this.profile?.school || "待填写", 参加动机: "希望在实践中探索 AI Agent。" }, version: `demo-${Date.now()}` };
     value.status = "FORM_PREPARED";
+    return value;
+  }
+  async updateDraft(id: string, _userId: string, draft: Draft) {
+    const value = await this.getOpportunity(id);
+    value.draft = draft;
     return value;
   }
   async decide(id: string, _userId: string, decision: "approve" | "reject") { const value = await this.getOpportunity(id); value.status = decision === "approve" ? "WAITING_APPROVAL" : "REJECTED"; return value; }
