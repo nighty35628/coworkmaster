@@ -36,6 +36,45 @@ classification, evidence, fit reasons, prepared form answers, draft reply,
 calendar artifact, and an approval state. This keeps the Slack adapter thin and
 allows each step to be tested over HTTP.
 
+## Post-hackathon roadmap
+
+These capabilities are intentionally planned but are not required to be
+complete in the event MVP.
+
+### Habit learning
+
+Record lightweight signals from the user's actions: approve, reject, snooze,
+edit, category correction, and response time. Periodically turn those signals
+into preferences such as preferred opportunity types, acceptable deadlines,
+and notification quiet hours. Store a versioned preference profile so the user
+can inspect or reset what was learned; do not silently rewrite the original
+profile.
+
+Reserved endpoints:
+
+- `POST /v1/feedback/events`
+- `GET /v1/preferences`
+- `POST /v1/preferences/reset`
+
+### Feedback loop
+
+After an operation, Slack can ask for a one-tap rating (`Useful`, `Not useful`,
+or `Wrong category`) and an optional short comment. Feedback is attached to the
+opportunity, classification, and action taken. A later evaluation job can use
+it to improve prompts, thresholds, and category mappings. The MVP only needs to
+persist the event; it does not need online model fine-tuning.
+
+### Future integrations
+
+- More form adapters (Google Forms, Typeform, custom HTML).
+- Calendar provider sync after the `.ics` MVP artifact.
+- Multiple mailboxes and team-level Slack identity mapping.
+- A review dashboard showing decisions, corrections, and success rate.
+
+The roadmap must not change the event-day acceptance path: discover an
+opportunity, prepare an action, request approval in Slack, and complete the
+approved action.
+
 ## Deliberate cuts
 
 No multi-account support, full mailbox UI, folder/search synchronization,
