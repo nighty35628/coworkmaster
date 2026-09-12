@@ -89,7 +89,9 @@ export function createSlackApp(options: SlackAdapterOptions): App {
     const [subcommand, ...args] = command.text.trim().split(/\s+/).filter(Boolean);
     try {
       if (!subcommand || subcommand === "help") {
-        await say({ text: "WhenAgent 命令：`profile` 设置资料，`scan` 扫描邮件，`inbox` 查看机会。", blocks: ok("*WhenAgent*\n`profile` 设置资料\n`scan` 扫描邮件\n`inbox` 查看待处理机会") });
+        await say({ text: "WhenAgent 命令：`home` 打开工作台，`profile` 设置资料，`scan` 扫描邮件，`inbox` 查看机会。", blocks: ok("*WhenAgent*\n`home` 打开工作台\n`profile` 设置资料\n`scan` 扫描邮件\n`inbox` 查看待处理机会") });
+      } else if (subcommand === "home") {
+        await publishHome(client, userId);
       } else if (subcommand === "profile") {
         await client.views.open({ trigger_id: command.trigger_id, view: profileView(await api.getProfile(userId)) });
       } else if (subcommand === "scan") {
