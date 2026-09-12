@@ -48,6 +48,7 @@ export async function scanMailbox(store: Store, mailbox: { listUnread: () => Pro
     const existing = [...store.opportunities.values()].find((item) => item.messageId === message.id);
     if (existing) { results.push(existing); continue; }
     results.push(store.addOpportunity({ messageId: message.id, category: result.category, priority: result.priority, title: message.subject,
+      sender: message.from, summary: message.text.slice(0, 240), fitReasons: result.evidence ?? [], action: result.nextAction, sourceUrl: message.url,
       deadline: result.deadline, fitScore: result.fitScore, evidence: result.evidence ?? [result.matches?.length ? `Matches profile: ${result.matches.join(", ")}` : "Actionable content detected"],
       nextAction: result.nextAction ?? (result.category === "opportunity" ? "complete_registration" : "review"), status: "QUALIFIED" }));
   }

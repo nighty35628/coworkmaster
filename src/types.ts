@@ -32,6 +32,11 @@ export interface Opportunity {
   category: Category;
   priority: "high" | "medium" | "low";
   title: string;
+  sender?: string;
+  summary?: string;
+  fitReasons?: string[];
+  action?: string;
+  sourceUrl?: string;
   deadline?: string;
   fitScore: number;
   evidence: string[];
