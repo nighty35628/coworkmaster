@@ -8,6 +8,7 @@ import { Store } from "./store.js";
 import { ImapSmtpMailboxAdapter, MockMailboxAdapter, type MailboxConfig, type MailboxAdapter } from "./services/mailbox.js";
 import { scanMailbox } from "./services/agent.js";
 import { DemoStore } from "./services/demo.js";
+import { MailboxSettings } from "./services/mailbox-settings.js";
 
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: true });
@@ -16,12 +17,14 @@ await app.register(fastifyStatic, {
   index: "index.html",
 });
 const store = new Store();
-let mailbox: MailboxAdapter = new MockMailboxAdapter();
-let mailboxConfig: MailboxConfig | null = null;
+const mailboxSettings = new MailboxSettings();
+let mailboxConfig = mailboxSettings.load();
+let mailbox: MailboxAdapter = mailboxConfig ? new ImapSmtpMailboxAdapter(mailboxConfig) : new MockMailboxAdapter();
+let lastTest: { imap: boolean; smtp: boolean; message: string; checkedAt: string } | null = null;
 const defaultUser = "demo-user";
 const demos = new DemoStore();
 
-app.get("/v1/health", async () => ({ ok: true, service: "opportunity-autopilot", demoMode: true }));
+app.get("/v1/health", async () => ({ ok: true, service: "opportunity-autopilot", demoMode: !mailboxConfig }));
 app.post<{ Body: { email?: string } }>("/v1/demo/sessions", async (request) => {
   const session = demos.create(request.body?.email);
   return { sessionId: session.id, stage: session.stage, email: session.email, displayUrl: `/hackathon/signin.html?sessionId=${encodeURIComponent(session.id)}` };
@@ -56,7 +59,8 @@ app.post<{ Params: { action: string }; Body: { sessionId?: string; email?: strin
 });
 app.post<{ Body: MailboxConfig }>("/v1/accounts/test", async (request, reply) => {
   try {
-    const candidate = new ImapSmtpMailboxAdapter(request.body);
+    const config = mailboxSettings.resolve(request.body);
+    const candidate = new ImapSmtpMailboxAdapter(config);
     return await candidate.testConnection();
   } catch (error) {
     return reply.code(400).send({ imap: false, smtp: false, message: error instanceof Error ? error.message : String(error) });
@@ -64,14 +68,22 @@ app.post<{ Body: MailboxConfig }>("/v1/accounts/test", async (request, reply) =>
 });
 app.post<{ Body: MailboxConfig }>("/v1/accounts/connect", async (request, reply) => {
   try {
-    const candidate = new ImapSmtpMailboxAdapter(request.body);
+    const config = mailboxSettings.resolve(request.body);
+    const candidate = new ImapSmtpMailboxAdapter(config);
     const result = await candidate.testConnection();
+    lastTest = { ...result, checkedAt: new Date().toISOString() };
     if (!result.imap || !result.smtp) return reply.code(400).send(result);
-    mailbox = candidate; mailboxConfig = request.body;
-    return { connected: true, imap: result.imap, smtp: result.smtp, message: result.message };
+    mailboxSettings.save(config);
+    mailbox = candidate; mailboxConfig = config;
+    return { connected: true, persisted: true, imap: result.imap, smtp: result.smtp, message: "IMAP / SMTP 验证成功，账号已保存。重启后自动恢复。" };
   } catch (error) { return reply.code(400).send({ connected: false, message: error instanceof Error ? error.message : String(error) }); }
 });
-app.get("/v1/accounts/status", async () => ({ connected: mailboxConfig !== null, mode: mailboxConfig ? "imap-smtp" : "demo" }));
+app.get("/v1/accounts/status", async (_request, reply) => {
+  reply.header("Cache-Control", "no-store");
+  return { configured: mailboxConfig !== null, persisted: mailboxConfig !== null,
+    connected: Boolean(lastTest?.imap && lastTest?.smtp), mode: mailboxConfig ? "imap-smtp" : "demo",
+    account: mailboxSettings.publicConfig(), lastTest };
+});
 app.get<{ Querystring: { userId?: string } }>("/v1/profile", async (request, reply) => {
   const profile = store.profiles.get(request.query.userId ?? defaultUser); return profile ?? null;
 });
@@ -107,4 +119,4 @@ app.post<{ Params: { id: string } }>("/v1/opportunities/:id/submit", async (requ
 app.post<{ Body: { opportunityId?: string; userId?: string; kind: string; comment?: string } }>("/v1/feedback/events", async (request) => { const event = { id: randomUUID(), opportunityId: request.body.opportunityId, userId: request.body.userId ?? defaultUser, kind: request.body.kind, comment: request.body.comment, createdAt: new Date().toISOString() }; store.feedback.push(event); return event; });
 
 const port = Number(process.env.PORT ?? 8787);
-app.listen({ port, host: process.env.HOST ?? "0.0.0.0" }).catch((error) => { app.log.error(error); process.exit(1); });
+app.listen({ port, host: process.env.HOST ?? "127.0.0.1" }).catch((error) => { app.log.error(error); process.exit(1); });

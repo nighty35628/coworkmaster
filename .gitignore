@@ -9,3 +9,4 @@ output/
 *.log
 *.sqlite
 *.sqlite-*
+.data/

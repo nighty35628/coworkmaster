@@ -12,6 +12,11 @@ npm run dev
 curl http://localhost:8787/v1/health
 ```
 
+For a local console that keeps running after the terminal task ends, use
+`npm run start:background` instead of `npm run dev`. Logs and the process ID
+are written to `.data/server.log` and `.data/server.pid`. The server listens
+on `127.0.0.1:8787` by default.
+
 Open [http://localhost:8787/](http://localhost:8787/) for the local test
 console. It supports IMAP/SMTP connection testing, reading messages, profile
 editing, opportunity scanning, form preparation, approval, simulated sending,
@@ -28,10 +33,21 @@ Without Slack credentials it stays in mock mode. With Socket Mode, set
 app then uses the same HTTP API and supports `/whenagent profile`, `scan`,
 `inbox`, and approval modals.
 
-Set `DEMO_MODE=false` and replace `MockMailboxAdapter` in
-`src/services/mailbox.ts` with an IMAP/SMTP adapter when connecting a real
-mailbox. Put DeepSeek credentials in the server environment only; the API
-falls back to deterministic classification when no key is configured.
+To connect a real mailbox, enter its IMAP/SMTP settings in the console and
+click **连接并保存**. Both connections are verified before saving. The current
+single-account backend stores credentials in `.data/mailbox.json` with
+owner-only file permissions; `.data/` is excluded from Git. The server restores
+this account after a restart, and the console refills the server settings.
+Leave the password blank to reuse the saved credentials for the same account.
+The status API never returns passwords. Without a saved account, the backend
+uses the seeded demo mailbox.
+
+`POST /v1/accounts/test` verifies a configuration without saving it;
+`POST /v1/accounts/connect` verifies and saves it. Both accept an empty JSON
+object to reuse the saved configuration. `GET /v1/accounts/status` reports
+the saved settings and the most recent connect result for this server run.
+Put DeepSeek credentials in the server environment only; the API falls back
+to deterministic classification when no key is configured.
 
 `src/services/forms.ts` defines the `FormAdapter` contract. The demo uses
 prepared fields only; a Playwright adapter can be added later without changing

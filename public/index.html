@@ -20,9 +20,11 @@
     h1,h2,h3,p { margin:0; } h1 { font-size:20px; } h2 { font-size:17px; } h3 { font-size:16px; }
     .eyebrow { color:var(--muted); font-size:12px; letter-spacing:.12em; text-transform:uppercase; font-family:"Fira Code"; }
     .status { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:13px; }
-    .dot { width:9px; height:9px; border-radius:50%; background:var(--green); box-shadow:0 0 12px var(--green); }
+    .dot { width:9px; height:9px; border-radius:50%; background:var(--amber); }
+    .dot.online { background:var(--green); box-shadow:0 0 12px var(--green); } .dot.offline { background:var(--red); }
     .btn { border:1px solid var(--line); color:var(--text); background:#1e293b; border-radius:9px; padding:9px 14px; transition:.18s ease; }
     .btn:hover { border-color:#64748b; transform:translateY(-1px); } .btn:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
+    .btn:disabled { opacity:.6; cursor:wait; transform:none; }
     .btn.primary { background:var(--green); border-color:var(--green); color:#052e16; font-weight:600; } .btn.danger { color:#fecaca; border-color:#7f1d1d; background:#3f151b; }
     .hero { border:1px solid var(--line); background:linear-gradient(110deg,#162236,#111827); border-radius:16px; padding:24px; margin-bottom:18px; }
     .hero p { color:var(--muted); max-width:720px; margin-top:6px; }
@@ -41,6 +43,8 @@
     .empty { color:var(--muted); text-align:center; padding:36px 8px; border:1px dashed var(--line); border-radius:12px; }
     label { display:block; color:#cbd5e1; font-size:12px; margin:12px 0 6px; } input,textarea { width:100%; color:var(--text); background:#0f172a; border:1px solid var(--line); border-radius:8px; padding:9px 10px; } textarea { min-height:74px; resize:vertical; } input:focus,textarea:focus { outline:2px solid #22c55e66; border-color:var(--green); }
     .helper { color:var(--muted); font-size:12px; margin-top:10px; } .toast { position:fixed; right:22px; bottom:22px; max-width:360px; background:#052e16; border:1px solid #166534; color:#dcfce7; padding:12px 15px; border-radius:10px; opacity:0; transform:translateY(10px); pointer-events:none; transition:.2s; } .toast.show { opacity:1; transform:none; }
+    .result { margin-top:12px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; color:#cbd5e1; white-space:pre-wrap; overflow-wrap:anywhere; font-size:13px; }
+    .result[data-state="success"] { color:#bbf7d0; border-color:#166534; } .result[data-state="error"] { color:#fecaca; border-color:#7f1d1d; }
     @media (max-width:850px) { .layout { grid-template-columns:1fr; } .mail-grid { grid-template-columns:repeat(2,1fr); } .topbar { align-items:start; } }
     @media (max-width:520px) { .shell { padding:18px 14px 40px; } .metrics { grid-template-columns:1fr; } .topbar { flex-wrap:wrap; } }
     @media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
@@ -50,11 +54,11 @@
   <main class="shell">
     <header class="topbar">
       <div class="brand"><div class="mark">OA</div><div><div class="eyebrow">developer console</div><h1>Opportunity Autopilot</h1></div></div>
-      <div class="status"><span class="dot"></span><span id="apiStatus">API online</span><button class="btn primary" id="scanBtn">扫描邮件</button></div>
+      <div class="status"><span class="dot" id="apiDot" aria-hidden="true"></span><span id="apiStatus" role="status">正在检查后端…</span><button class="btn primary" id="scanBtn">扫描邮件</button></div>
     </header>
 
     <section class="hero">
-      <div class="eyebrow">Slack-first email agent</div><h2 style="font-size:25px;margin-top:5px">把值得行动的邮件推进到下一步。</h2><p>这个控制台用于开发测试：填写资料、扫描种子邮件、准备报名表，再模拟审批发送。正式交互会在 Slack 中完成。</p>
+      <div class="eyebrow">Slack-first email agent</div><h2 style="font-size:25px;margin-top:5px">把值得行动的邮件推进到下一步。</h2><p>连接邮箱、查看邮件，再测试资料匹配和报名准备。邮箱连接保存后，刷新页面或重启后端都可以继续使用。正式交互会在 Slack 中完成。</p>
       <div class="metrics"><div class="metric"><strong id="countAll">0</strong><span>已发现机会</span></div><div class="metric"><strong id="countHigh">0</strong><span>高优先级</span></div><div class="metric"><strong id="countReady">0</strong><span>待确认</span></div></div>
     </section>
 
@@ -62,12 +66,13 @@
       <form id="mailForm" class="mail-grid">
         <div><label for="imapHost">IMAP 主机</label><input id="imapHost" placeholder="imap.gmail.com" /></div><div><label for="imapPort">IMAP 端口</label><input id="imapPort" value="993" /></div>
         <div><label for="smtpHost">SMTP 主机</label><input id="smtpHost" placeholder="smtp.gmail.com" /></div><div><label for="smtpPort">SMTP 端口</label><input id="smtpPort" value="465" /></div>
-        <div><label for="mailUser">邮箱账号</label><input id="mailUser" type="email" placeholder="you@example.com" /></div><div><label for="mailPass">应用专用密码</label><input id="mailPass" type="password" placeholder="不会写入日志" /></div>
-        <div class="mail-actions"><button class="btn" type="button" id="testMailBtn">测试连接</button><button class="btn primary" type="submit">连接并使用</button></div>
-      </form><p class="helper">Gmail 通常需要应用专用密码；Microsoft 365 可能需要 OAuth2。演示模式可不填写，继续使用种子邮箱。</p>
+        <div><label for="mailUser">邮箱账号</label><input id="mailUser" type="email" placeholder="you@example.com" autocomplete="username" /></div><div><label for="mailPass">应用专用密码</label><input id="mailPass" type="password" placeholder="输入客户端授权码" autocomplete="current-password" aria-describedby="mailCredentialHint" /></div>
+        <div class="mail-actions"><button class="btn" type="button" id="testMailBtn">测试连接</button><button class="btn primary" type="submit" id="connectMailBtn">连接并保存</button></div>
+      </form><p class="helper" id="mailCredentialHint">点击“连接并保存”后，账号保存在本机后端；页面不会保存密码。</p>
+      <div class="result" id="mailResult" role="status" aria-live="polite">正在读取邮箱配置…</div>
     </section>
 
-    <section class="panel" style="margin-bottom:18px"><div class="panel-head"><div><div class="eyebrow">mailbox</div><h2>收件箱</h2></div><button class="btn" id="loadMailBtn">读取邮件</button></div><div class="feed" id="mailFeed"><div class="empty">连接邮箱后点击“读取邮件”。</div></div></section>
+    <section class="panel" style="margin-bottom:18px"><div class="panel-head"><div><div class="eyebrow">mailbox</div><h2>收件箱</h2></div><button class="btn" id="loadMailBtn">读取邮件</button></div><p class="helper" id="mailReadResult" role="status" aria-live="polite" style="margin-bottom:12px">连接邮箱后点击“读取邮件”。</p><div class="feed" id="mailFeed"><div class="empty">尚未读取邮件。</div></div></section>
 
     <div class="layout">
       <section class="panel"><div class="panel-head"><div><div class="eyebrow">inbox intelligence</div><h2>机会收件箱</h2></div><button class="btn" id="refreshBtn">刷新</button></div><div class="feed" id="feed"><div class="empty">点击“扫描邮件”开始测试。</div></div></section>
@@ -89,7 +94,51 @@
     const $ = (id) => document.getElementById(id);
     let opportunities = [];
     const esc = (s='') => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    async function request(path, options={}) { const res = await fetch(API + path, {headers:{'content-type':'application/json'}, ...options}); if (!res.ok) throw new Error(await res.text()); return res.json(); }
+    const offlineMessage = '本地后端未运行，请 npm run start:background';
+    let mailBusy = false;
+    function setApiStatus(online) { $('apiStatus').textContent=online?'API 在线':'API 离线'; $('apiDot').className='dot '+(online?'online':'offline'); }
+    async function request(path, options={}) {
+      let res;
+      try { res = await fetch(API + path, {headers:{'content-type':'application/json'}, ...options}); }
+      catch { setApiStatus(false); throw new Error(offlineMessage); }
+      const text = await res.text();
+      let body;
+      try { body = text ? JSON.parse(text) : {}; }
+      catch { throw new Error(`后端返回异常（HTTP ${res.status}），请检查服务是否正常运行。`); }
+      if (!res.ok) throw new Error(body.message || body.error || `请求失败（HTTP ${res.status}）`);
+      return body;
+    }
+    async function checkHealth() { try { await request('/health'); setApiStatus(true); return true; } catch { setApiStatus(false); return false; } }
+    function mailResult(message, state='') { $('mailResult').textContent=message; $('mailResult').dataset.state=state; }
+    function setMailBusy(busy, action='') {
+      mailBusy=busy;
+      for (const [id,label,loading] of [['testMailBtn','测试连接','测试中…'],['connectMailBtn','连接并保存','连接并保存中…'],['loadMailBtn','读取邮件','读取中…']]) {
+        $(id).disabled=busy;
+        $(id).textContent=busy&&id===action?loading:label;
+      }
+      $('mailForm').setAttribute('aria-busy',String(busy));
+      $('mailFeed').setAttribute('aria-busy',String(busy&&action==='loadMailBtn'));
+    }
+    function testSummary(result) { return `IMAP：${result.imap?'成功':'失败'} · SMTP：${result.smtp?'成功':'失败'}${result.message?'\n'+result.message:''}`; }
+    async function loadAccountStatus() {
+      const status=await request('/accounts/status');
+      if (status.account) {
+        $('imapHost').value=status.account.imap.host;
+        $('imapPort').value=status.account.imap.port;
+        $('smtpHost').value=status.account.smtp.host;
+        $('smtpPort').value=status.account.smtp.port;
+        $('mailUser').value=status.account.imap.user;
+        $('mailPass').value='';
+      }
+      $('mailStatus').textContent=status.configured?(status.persisted?'已保存账号':(status.connected?'已连接':'已配置')):'演示邮箱';
+      $('mailStatus').className='chip '+(status.persisted?'green':'');
+      $('mailPass').placeholder=status.configured?'留空使用已保存的凭据':'输入客户端授权码';
+      $('mailCredentialHint').textContent=status.persisted?'账号已保存在本机后端。密码留空即可复用；刷新页面或重启后端后仍可读取邮件。':'点击“连接并保存”后，账号保存在本机后端；页面不会保存密码。';
+      const last=status.lastTest;
+      if(last) mailResult(`上次测试：${new Date(last.checkedAt).toLocaleString()}\n${testSummary(last)}`,last.imap&&last.smtp?'success':'error');
+      else mailResult(status.configured?'已恢复邮箱配置，可以直接测试连接或读取邮件。':'尚未保存邮箱账号。请填写 IMAP / SMTP 信息；未连接时读取的是演示邮件。');
+      return status;
+    }
     function toast(message, error=false) { const el=$('toast'); el.textContent=message; el.style.background=error?'#3f151b':'#052e16'; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
     function updateMetrics() { $('countAll').textContent=opportunities.length; $('countHigh').textContent=opportunities.filter(x=>x.priority==='high').length; $('countReady').textContent=opportunities.filter(x=>['WAITING_APPROVAL','FORM_PREPARED'].includes(x.status)).length; }
     function render() { updateMetrics(); const feed=$('feed'); if(!opportunities.length){feed.innerHTML='<div class="empty">没有需要处理的机会。</div>';return;} feed.innerHTML=opportunities.map(o=>`<article class="card"><div class="card-top"><div><h3>${esc(o.title)}</h3><div class="meta">${esc(o.sender||'')} · ${esc(o.deadline||'无明确截止时间')}</div></div><span class="chip ${o.priority==='high'?'amber':''}">${esc(o.status||'QUALIFIED')}</span></div><div class="chips"><span class="chip green">${esc(o.category||'informational')}</span><span class="chip">匹配度 ${Math.round((o.fitScore||0)*100)}%</span></div><div class="evidence">${esc((o.evidence||[]).join(' · '))}</div><div class="actions">${o.status==='QUALIFIED'?`<button class="btn primary" onclick="prepare('${o.id}')">准备报名表</button>`:''}${['WAITING_APPROVAL','FORM_PREPARED'].includes(o.status)?`<button class="btn primary" onclick="approve('${o.id}')">确认并发送</button>`:''}${o.status==='SUBMITTED'||o.status==='SENT'?`<button class="btn" onclick="feedback('${o.id}','useful')">有帮助</button><button class="btn" onclick="feedback('${o.id}','not_useful')">没帮助</button>`:''}</div></article>`).join(''); }
@@ -99,11 +148,56 @@
     async function prepare(id){ try { const updated=await request(`/opportunities/${id}/prepare-form`,{method:'POST',body:'{}'}); opportunities=opportunities.map(x=>x.id===id?updated:x); render(); toast('报名表已准备好，请确认后发送。'); } catch(e){toast('准备失败：'+e.message,true);} }
     async function approve(id){ try { await request(`/opportunities/${id}/approve`,{method:'POST',body:JSON.stringify({decision:'approve'})}); const updated=await request(`/opportunities/${id}/submit`,{method:'POST',body:'{}'}); opportunities=opportunities.map(x=>x.id===id?updated:x); render(); toast('已模拟提交，Slack 会回写结果。'); } catch(e){toast('提交失败：'+e.message,true);} }
     async function feedback(id,kind){ try { await request('/feedback/events',{method:'POST',body:JSON.stringify({opportunityId:id,userId:'demo-user',kind})}); toast('反馈已记录。'); } catch(e){toast('反馈失败：'+e.message,true);} }
-    function mailConfig(){ const imapPort=Number($('imapPort').value)||993; const smtpPort=Number($('smtpPort').value)||465; return {imap:{host:$('imapHost').value.trim(),port:imapPort,secure:imapPort===993,user:$('mailUser').value.trim(),password:$('mailPass').value},smtp:{host:$('smtpHost').value.trim(),port:smtpPort,secure:smtpPort!==587,user:$('mailUser').value.trim(),password:$('mailPass').value}}; }
-    async function testMail(){ try { const r=await request('/accounts/test',{method:'POST',body:JSON.stringify(mailConfig())}); $('mailStatus').textContent=r.message||'测试完成'; toast(r.message||'连接测试完成',!r.imap||!r.smtp); } catch(e){toast('连接测试失败：'+e.message,true);} }
-    async function connectMail(e){ e.preventDefault(); try { const r=await request('/accounts/connect',{method:'POST',body:JSON.stringify(mailConfig())}); $('mailStatus').textContent=r.connected?'已连接':'连接失败'; toast(r.message||'邮箱已连接',!r.connected); } catch(e){toast('连接失败：'+e.message,true);} }
-    async function loadMessages(){ try { const r=await request('/messages'); const list=r.messages||[]; const el=$('mailFeed'); el.innerHTML=list.length?list.map(m=>`<article class="card"><div class="card-top"><div><h3>${esc(m.subject)}</h3><div class="meta">${esc(m.from)} · ${new Date(m.receivedAt).toLocaleString()}</div></div><span class="chip ${m.unread?'amber':''}">${m.unread?'未读':'已读'}</span></div><p style="margin-top:10px;color:#cbd5e1;white-space:pre-wrap">${esc((m.text||'').slice(0,500))}</p></article>`).join(''):'<div class="empty">收件箱为空。</div>'; } catch(e){toast('读取邮件失败：'+e.message,true);} }
-    $('scanBtn').addEventListener('click',scan); $('refreshBtn').addEventListener('click',async()=>{try{const r=await request('/opportunities');opportunities=r.opportunities||[];render();}catch(e){toast('刷新失败：'+e.message,true);}}); $('profileForm').addEventListener('submit',saveProfile); $('testMailBtn').addEventListener('click',testMail); $('mailForm').addEventListener('submit',connectMail); $('loadMailBtn').addEventListener('click',loadMessages); loadProfile();
+    function mailConfig(){
+      const user=$('mailUser').value.trim(), imapHost=$('imapHost').value.trim(), smtpHost=$('smtpHost').value.trim();
+      if(!user&&!imapHost&&!smtpHost&&!$('mailPass').value) return {};
+      const imapPort=Number($('imapPort').value)||993, smtpPort=Number($('smtpPort').value)||465;
+      return {imap:{host:imapHost,port:imapPort,secure:imapPort===993,user,password:$('mailPass').value},smtp:{host:smtpHost,port:smtpPort,secure:smtpPort===465,user,password:$('mailPass').value}};
+    }
+    async function testMail(){
+      if(mailBusy)return;
+      setMailBusy(true,'testMailBtn'); mailResult('正在连接 IMAP 和 SMTP 服务器，请稍候…');
+      try {
+        const r=await request('/accounts/test',{method:'POST',body:JSON.stringify(mailConfig())});
+        const success=r.imap&&r.smtp;
+        mailResult(testSummary(r),success?'success':'error');
+        toast(success?'IMAP 和 SMTP 连接测试成功。':'连接测试未通过，请查看下方结果。',!success);
+        await checkHealth();
+      } catch(e){mailResult('连接测试失败：'+e.message,'error');toast(e.message,true);}
+      finally{setMailBusy(false);}
+    }
+    async function connectMail(e){
+      e.preventDefault(); if(mailBusy)return;
+      setMailBusy(true,'connectMailBtn'); mailResult('正在测试连接并保存账号…');
+      try {
+        const r=await request('/accounts/connect',{method:'POST',body:JSON.stringify(mailConfig())});
+        if(!r.connected) throw new Error(r.message||'邮箱连接失败，请检查服务器信息和客户端授权码。');
+        await loadAccountStatus();
+        mailResult('邮箱已连接并保存。刷新页面或重启后端后可以继续使用，密码无需重复填写。','success');
+        toast('账号已保存，可以读取邮件。');
+        await checkHealth();
+      } catch(e){mailResult('连接失败：'+e.message,'error');toast(e.message,true);}
+      finally{setMailBusy(false);}
+    }
+    async function loadMessages(){
+      if(mailBusy)return;
+      setMailBusy(true,'loadMailBtn'); $('mailReadResult').textContent='正在读取收件箱…'; $('mailReadResult').style.color='';
+      try {
+        const r=await request('/messages'); const list=r.messages||[]; const el=$('mailFeed');
+        el.innerHTML=list.length?list.map(m=>`<article class="card"><div class="card-top"><div><h3>${esc(m.subject)}</h3><div class="meta">${esc(m.from)} · ${new Date(m.receivedAt).toLocaleString()}</div></div><span class="chip ${m.unread?'amber':''}">${m.unread?'未读':'已读'}</span></div><p style="margin-top:10px;color:#cbd5e1;white-space:pre-wrap">${esc((m.text||'').slice(0,500))}</p></article>`).join(''):'<div class="empty">收件箱为空。</div>';
+        $('mailReadResult').textContent=`读取成功，共 ${list.length} 封邮件 · ${new Date().toLocaleTimeString()}`;
+        $('mailReadResult').style.color='#bbf7d0';
+        await checkHealth();
+      } catch(e){$('mailReadResult').textContent='读取邮件失败：'+e.message; $('mailReadResult').style.color='#fecaca';toast(e.message,true);}
+      finally{setMailBusy(false);}
+    }
+    async function initialize(){
+      const online=await checkHealth();
+      if(!online){mailResult(offlineMessage,'error');return;}
+      await Promise.all([loadProfile(),loadAccountStatus().catch(e=>mailResult('读取账号配置失败：'+e.message,'error'))]);
+    }
+    $('scanBtn').addEventListener('click',scan); $('refreshBtn').addEventListener('click',async()=>{try{const r=await request('/opportunities');opportunities=r.opportunities||[];render();}catch(e){toast('刷新失败：'+e.message,true);}}); $('profileForm').addEventListener('submit',saveProfile); $('testMailBtn').addEventListener('click',testMail); $('mailForm').addEventListener('submit',connectMail); $('loadMailBtn').addEventListener('click',loadMessages); initialize();
+    setInterval(checkHealth,30000);
     window.prepare=prepare; window.approve=approve; window.feedback=feedback;
   </script>
 </body></html>

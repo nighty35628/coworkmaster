@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
+    "start:background": "node scripts/start-local.mjs",
+    "test": "tsx --test tests/*.test.ts",
     "slack": "tsx src/slack-server.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc"

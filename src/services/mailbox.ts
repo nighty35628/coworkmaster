@@ -21,31 +21,39 @@ function auth(server: MailServer) {
   return { user: server.user ?? server.username ?? "", pass: server.password };
 }
 
-/** Direct IMAP/SMTP adapter. Credentials live only in the running process. */
+/** Direct IMAP/SMTP adapter; server restores its config from local settings. */
 export class ImapSmtpMailboxAdapter implements MailboxAdapter {
   constructor(private readonly config: MailboxConfig) {}
 
   private imap() {
     const server = this.config.imap;
-    return new ImapFlow({ host: server.host, port: server.port ?? 993, secure: server.secure ?? true, auth: auth(server), logger: false });
+    const client = new ImapFlow({ host: server.host, port: server.port ?? 993, secure: server.secure ?? true, auth: auth(server), logger: false,
+      connectionTimeout: 12000, greetingTimeout: 12000, socketTimeout: 30000 });
+    // Closing rejects pending commands; a socket error must not crash the API process.
+    client.on("error", () => client.close());
+    return client;
   }
 
   private transporter() {
     const server = this.config.smtp;
-    return nodemailer.createTransport({ host: server.host, port: server.port ?? 465, secure: server.secure ?? true, auth: auth(server) });
+    return nodemailer.createTransport({ host: server.host, port: server.port ?? 465, secure: server.secure ?? true, auth: auth(server),
+      connectionTimeout: 12000, greetingTimeout: 12000, socketTimeout: 30000 });
   }
 
   async testConnection() {
     const client = this.imap();
-    try {
-      await client.connect();
-      await client.logout();
-      await this.transporter().verify();
-      return { imap: true, smtp: true, message: "IMAP and SMTP connection verified" };
-    } catch (error) {
-      try { await client.logout(); } catch { /* connection may not have opened */ }
-      throw new Error(error instanceof Error ? error.message : String(error));
-    }
+    const transport = this.transporter();
+    const results = await Promise.allSettled([
+      (async () => { try { await client.connect(); } finally { await client.logout().catch(() => undefined); } })(),
+      transport.verify().finally(() => transport.close()),
+    ]);
+    const describe = (name: string, result: PromiseSettledResult<unknown>) => {
+      if (result.status === "fulfilled") return `${name} 连接成功`;
+      const error = result.reason;
+      return `${name}: ${error?.responseText || error?.response || error?.message || "连接失败"}`;
+    };
+    return { imap: results[0].status === "fulfilled", smtp: results[1].status === "fulfilled",
+      message: `${describe("IMAP", results[0])}；${describe("SMTP", results[1])}` };
   }
 
   private async readMessages(criteria: Record<string, unknown>) {
@@ -57,6 +65,7 @@ export class ImapSmtpMailboxAdapter implements MailboxAdapter {
       try {
         const found = await client.search(criteria, { uid: true });
         const uids = Array.isArray(found) ? found : [];
+        if (!uids.length) return messages;
         for await (const item of client.fetch(uids.slice(-50), { uid: true, envelope: true, source: true, flags: true, internalDate: true }, { uid: true })) {
           const parsed = await simpleParser(item.source ?? Buffer.from(""));
           const from = item.envelope?.from?.[0]?.address ?? "";
