@@ -36,9 +36,10 @@ npm run slack
 ```
 
 Without Slack credentials it stays in mock mode. With Socket Mode, set
-`SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, and `SLACK_APP_TOKEN`; the Slack
-app then uses the same HTTP API and supports `/whenagent profile`, `scan`,
-`inbox`, and approval modals.
+`SLACK_BOT_TOKEN` and `SLACK_APP_TOKEN`; `SLACK_SIGNING_SECRET` is optional
+for this WebSocket transport (it is only needed if you later expose Slack's
+HTTP receiver). The Slack app then uses the same HTTP API and supports
+`/whenagent profile`, `scan`, `inbox`, and approval modals.
 
 To connect a real mailbox, enter its IMAP/SMTP settings in the console and
 click **连接并保存**. Both connections are verified before saving. The current
