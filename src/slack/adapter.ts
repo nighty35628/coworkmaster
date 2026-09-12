@@ -29,13 +29,21 @@ function errorBlocks(error: unknown): KnownBlock[] {
 export function createSlackApp(options: SlackAdapterOptions): App {
   const mock = options.mock || !options.botToken || !options.signingSecret || !options.appToken;
   const api: AgentApi = options.api || new MockAgentApi();
-  const app = new App({
-    token: options.botToken || "xoxb-mock",
-    signingSecret: options.signingSecret || "mock-signing-secret",
-    appToken: options.appToken || "xapp-mock",
-    socketMode: true,
-    logLevel: mock ? LogLevel.ERROR : LogLevel.INFO,
-  });
+  // Bolt calls auth.test while constructing an app with a token. Use its
+  // authorize hook in mock mode so local tests never contact Slack.
+  const app = mock
+    ? new App({
+      signingSecret: options.signingSecret || "mock-signing-secret",
+      authorize: async () => ({ botToken: "xoxb-mock", botId: "BMOCK", teamId: "TMOCK" }),
+      logLevel: LogLevel.ERROR,
+    })
+    : new App({
+      token: options.botToken,
+      signingSecret: options.signingSecret,
+      appToken: options.appToken,
+      socketMode: true,
+      logLevel: LogLevel.INFO,
+    });
   const fallbackUser = options.defaultUserId || "demo-user";
 
   app.command("/whenagent", async ({ command, ack, say, client }) => {
