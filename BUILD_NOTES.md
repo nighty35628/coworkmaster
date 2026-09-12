@@ -75,6 +75,39 @@ The roadmap must not change the event-day acceptance path: discover an
 opportunity, prepare an action, request approval in Slack, and complete the
 approved action.
 
+## Jupiter reference
+
+[`nighty35628/jupiter`](https://github.com/nighty35628/jupiter) is a useful
+reference for the Agent runtime rather than a mailbox base. The ideas worth
+carrying over are:
+
+- port/adapter boundaries for model, tools, memory, and channels;
+- append-only events and an execution journal for explainable decisions;
+- a small memory store for user preferences and project context;
+- browser automation as a tool, using a controlled form fixture for the MVP;
+- DeepSeek configuration and stable context handling.
+
+The new project should implement its own small versions of these boundaries
+and keep the email domain independent from Slack. Jupiter is GPL-3.0-or-later,
+so do not copy source files into this repository unless the resulting license
+choice is intentional. Standard libraries and public behavioral ideas remain
+usable.
+
+## Final implementation order
+
+1. `MailService`: IMAP fetch/parse, SMTP draft/send, and a mock mailbox.
+2. `ProfileService`: Slack onboarding and a compact profile record.
+3. `OpportunityAgent`: classification, fit scoring, evidence, and form URL
+   extraction through DeepSeek structured output.
+4. `FormService`: Playwright adapter for one controlled HTML form; produce a
+   reviewable field/value draft without submitting.
+5. `ApprovalExecutor`: apply an approved draft, submit/send, emit an event,
+   and update the Slack thread.
+6. `SlackAdapter`: Socket Mode commands, Block Kit cards, review modal, and
+   feedback buttons. Keep all business calls on the services above.
+7. Post-MVP instrumentation: interaction events, one-tap feedback, preference
+   snapshots, and a simple time-decay preference calculation.
+
 ## Deliberate cuts
 
 No multi-account support, full mailbox UI, folder/search synchronization,
