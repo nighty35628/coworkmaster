@@ -27,7 +27,10 @@ function errorBlocks(error: unknown): KnownBlock[] {
 }
 
 export function createSlackApp(options: SlackAdapterOptions): App {
-  const mock = options.mock || !options.botToken || !options.signingSecret || !options.appToken;
+  // Socket Mode authenticates the WebSocket with the app-level token. A
+  // signing secret is only needed by Bolt's HTTP receiver, so do not force
+  // it for local Socket Mode connections.
+  const mock = options.mock || !options.botToken || !options.appToken;
   const api: AgentApi = options.api || new MockAgentApi();
   // Bolt calls auth.test while constructing an app with a token. Use its
   // authorize hook in mock mode so local tests never contact Slack.
@@ -39,7 +42,7 @@ export function createSlackApp(options: SlackAdapterOptions): App {
     })
     : new App({
       token: options.botToken,
-      signingSecret: options.signingSecret,
+      ...(options.signingSecret ? { signingSecret: options.signingSecret } : {}),
       appToken: options.appToken,
       socketMode: true,
       logLevel: LogLevel.INFO,
@@ -126,8 +129,8 @@ export function createSlackApp(options: SlackAdapterOptions): App {
 
 export async function startSlackApp(options: SlackAdapterOptions): Promise<App> {
   const app = createSlackApp(options);
-  if (options.mock || !options.botToken || !options.signingSecret || !options.appToken) {
-    console.log("Slack adapter created in mock mode; set SLACK_BOT_TOKEN, SLACK_SIGNING_SECRET and SLACK_APP_TOKEN to connect.");
+  if (options.mock || !options.botToken || !options.appToken) {
+    console.log("Slack adapter created in mock mode; set SLACK_BOT_TOKEN and SLACK_APP_TOKEN to connect via Socket Mode.");
     return app;
   }
   await app.start();
