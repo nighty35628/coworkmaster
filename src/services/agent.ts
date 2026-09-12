@@ -18,24 +18,36 @@ export function classify(message: MailMessage, profile?: UserProfile) {
 }
 
 async function classifyWithDeepSeek(message: MailMessage, profile?: UserProfile) {
-  const key = process.env.DEEPSEEK_API_KEY;
-  if (!key) return classify(message, profile);
-  const base = (process.env.DEEPSEEK_BASE_URL ?? "https://api.deepseek.com").replace(/\/$/, "");
-  const response = await fetch(`${base}/chat/completions`, {
-    method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-    body: JSON.stringify({ model: process.env.DEEPSEEK_MODEL ?? "deepseek-chat", temperature: 0.1,
-      response_format: { type: "json_object" }, messages: [
-        { role: "system", content: "Classify this email for a student opportunity agent. Return JSON with category (opportunity|action_required|informational|noise), priority, fitScore (0-1), deadline, nextAction, evidence (array)." },
-        { role: "user", content: JSON.stringify({ email: { subject: message.subject, text: message.text }, profile }) }
-      ] })
-  });
-  if (!response.ok) return classify(message, profile);
-  const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  const key = openRouterKey ?? process.env.DEEPSEEK_API_KEY;
+  if (!key || process.env.LLM_ENABLED !== "true") return classify(message, profile);
+  const base = (openRouterKey
+    ? (process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1")
+    : (process.env.DEEPSEEK_BASE_URL ?? "https://api.deepseek.com")).replace(/\/$/, "");
+  const model = openRouterKey
+    ? (process.env.OPENROUTER_MODEL ?? "deepseek/deepseek-chat")
+    : (process.env.DEEPSEEK_MODEL ?? "deepseek-chat");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Number(process.env.LLM_TIMEOUT_MS ?? 12000));
   try {
+    const response = await fetch(`${base}/chat/completions`, {
+      method: "POST", headers: {
+        "content-type": "application/json", authorization: `Bearer ${key}`,
+        ...(openRouterKey ? { "HTTP-Referer": process.env.OPENROUTER_SITE_URL ?? "http://localhost:8787", "X-Title": "Opportunity Autopilot" } : {}),
+      }, signal: controller.signal,
+      body: JSON.stringify({ model, temperature: 0.1,
+        response_format: { type: "json_object" }, messages: [
+          { role: "system", content: "Classify this email for a student opportunity agent. Return JSON with category (opportunity|action_required|informational|noise), priority, fitScore (0-1), deadline, nextAction, evidence (array)." },
+          { role: "user", content: JSON.stringify({ email: { subject: message.subject, text: message.text }, profile }) }
+        ] })
+    });
+    if (!response.ok) return classify(message, profile);
+    const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
     const parsed = JSON.parse(payload.choices?.[0]?.message?.content ?? "{}");
     if (!parsed.category) return classify(message, profile);
     return { ...classify(message, profile), ...parsed, fitScore: Number(parsed.fitScore ?? 0.5) };
   } catch { return classify(message, profile); }
+  finally { clearTimeout(timeout); }
 }
 
 export async function scanMailbox(store: Store, mailbox: { listUnread: () => Promise<MailMessage[]> }, userId: string) {

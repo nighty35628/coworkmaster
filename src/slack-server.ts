@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { HttpAgentApi, startSlackApp } from "./slack/index.js";
 
 const apiBaseUrl = process.env.AGENT_API_URL ?? `http://localhost:${process.env.PORT ?? 8787}`;

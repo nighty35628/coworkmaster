@@ -1,3 +1,4 @@
+import "dotenv/config";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import fastifyStatic from "@fastify/static";
@@ -25,6 +26,12 @@ const defaultUser = "demo-user";
 const demos = new DemoStore();
 
 app.get("/v1/health", async () => ({ ok: true, service: "opportunity-autopilot", demoMode: !mailboxConfig }));
+app.get("/v1/llm/status", async () => ({
+  configured: Boolean(process.env.OPENROUTER_API_KEY || process.env.DEEPSEEK_API_KEY),
+  enabled: process.env.LLM_ENABLED === "true",
+  provider: process.env.OPENROUTER_API_KEY ? "openrouter" : process.env.DEEPSEEK_API_KEY ? "deepseek" : "heuristic",
+  model: process.env.OPENROUTER_API_KEY ? (process.env.OPENROUTER_MODEL ?? "deepseek/deepseek-chat") : (process.env.DEEPSEEK_MODEL ?? "deepseek-chat"),
+}));
 app.post<{ Body: { email?: string } }>("/v1/demo/sessions", async (request) => {
   const session = demos.create(request.body?.email);
   return { sessionId: session.id, stage: session.stage, email: session.email, displayUrl: `/hackathon/signin.html?sessionId=${encodeURIComponent(session.id)}` };
